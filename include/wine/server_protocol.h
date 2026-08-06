@@ -385,6 +385,14 @@ struct luid_attr
     unsigned int attrs;
 };
 
+struct kernel_module_info
+{
+    client_ptr_t base;
+    mem_size_t   size;
+    data_size_t  name_len;
+
+};
+
 struct acl
 {
     unsigned char  revision;
@@ -5438,6 +5446,45 @@ struct set_kernel_object_ptr_reply
 };
 
 
+struct register_kernel_module_request
+{
+    struct request_header __header;
+    char __pad_12[4];
+    client_ptr_t base;
+    mem_size_t   size;
+    /* VARARG(name,unicode_str); */
+};
+struct register_kernel_module_reply
+{
+    struct reply_header __header;
+};
+
+
+struct unregister_kernel_module_request
+{
+    struct request_header __header;
+    char __pad_12[4];
+    client_ptr_t base;
+};
+struct unregister_kernel_module_reply
+{
+    struct reply_header __header;
+};
+
+
+struct list_kernel_modules_request
+{
+    struct request_header __header;
+    char __pad_12[4];
+};
+struct list_kernel_modules_reply
+{
+    struct reply_header __header;
+    unsigned int module_count;
+    data_size_t  info_size;
+    /* VARARG(info,kernel_module_info); */
+};
+
 
 struct grab_kernel_object_request
 {
@@ -6532,6 +6579,9 @@ enum request
     REQ_get_next_device_request,
     REQ_get_kernel_object_ptr,
     REQ_set_kernel_object_ptr,
+    REQ_register_kernel_module,
+    REQ_unregister_kernel_module,
+    REQ_list_kernel_modules,
     REQ_grab_kernel_object,
     REQ_release_kernel_object,
     REQ_get_kernel_object_handle,
@@ -6849,6 +6899,9 @@ union generic_request
     struct get_next_device_request_request get_next_device_request_request;
     struct get_kernel_object_ptr_request get_kernel_object_ptr_request;
     struct set_kernel_object_ptr_request set_kernel_object_ptr_request;
+    struct register_kernel_module_request register_kernel_module_request;
+    struct unregister_kernel_module_request unregister_kernel_module_request;
+    struct list_kernel_modules_request list_kernel_modules_request;
     struct grab_kernel_object_request grab_kernel_object_request;
     struct release_kernel_object_request release_kernel_object_request;
     struct get_kernel_object_handle_request get_kernel_object_handle_request;
@@ -7164,6 +7217,9 @@ union generic_reply
     struct get_next_device_request_reply get_next_device_request_reply;
     struct get_kernel_object_ptr_reply get_kernel_object_ptr_reply;
     struct set_kernel_object_ptr_reply set_kernel_object_ptr_reply;
+    struct register_kernel_module_reply register_kernel_module_reply;
+    struct unregister_kernel_module_reply unregister_kernel_module_reply;
+    struct list_kernel_modules_reply list_kernel_modules_reply;
     struct grab_kernel_object_reply grab_kernel_object_reply;
     struct release_kernel_object_reply release_kernel_object_reply;
     struct get_kernel_object_handle_reply get_kernel_object_handle_reply;
@@ -7218,6 +7274,6 @@ union generic_reply
     struct alpc_create_port_reply alpc_create_port_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 965
+#define SERVER_PROTOCOL_VERSION 966
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */
