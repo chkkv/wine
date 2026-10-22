@@ -263,6 +263,7 @@ BOOL WINAPI GetBinaryTypeA( LPCSTR lpApplicationName, LPDWORD lpBinaryType )
 
 static BOOL needs_int3_hack(void)
 {
+#ifdef __x86_64__
     static volatile int cache = -1;
     
     if (cache == -1)
@@ -289,12 +290,19 @@ static BOOL needs_int3_hack(void)
     }
     
     return cache;
+#else
+    return FALSE;
+#endif
 }
 
+#ifdef __x86_64__
 static void __attribute__((naked)) int3_stub( void )
 {
     asm(".byte 0xCC, 0xCC, 0xCC, 0xCC\n\t");
 }
+#else
+static void int3_stub( void ) { }
+#endif
 
 /***********************************************************************
  *           GetProcAddress   		(KERNEL32.@)
