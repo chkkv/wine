@@ -1566,6 +1566,8 @@ enable_w32skrnl
 enable_w32sys
 enable_wbemdisp
 enable_wbemprox
+enable_wdfldr_sys
+enable_wdf01000_sys
 enable_wdscore
 enable_webservices
 enable_websocket
@@ -1674,6 +1676,7 @@ enable_wow64win
 enable_wpc
 enable_wpcap
 enable_wpnapps
+enable_wpprecorder_sys
 enable_ws2_32
 enable_wsdapi
 enable_wshom_ocx
@@ -1780,6 +1783,7 @@ enable_certutil
 enable_chcp_com
 enable_clock
 enable_cmd
+enable_csrss
 enable_conhost
 enable_control
 enable_cscript
@@ -22697,6 +22701,8 @@ wine_fn_config_makefile dlls/wbemdisp enable_wbemdisp
 wine_fn_config_makefile dlls/wbemdisp/tests enable_tests
 wine_fn_config_makefile dlls/wbemprox enable_wbemprox
 wine_fn_config_makefile dlls/wbemprox/tests enable_tests
+wine_fn_config_makefile dlls/wdfldr.sys enable_wdfldr_sys
+wine_fn_config_makefile dlls/wdf01000.sys enable_wdf01000_sys
 wine_fn_config_makefile dlls/wdscore enable_wdscore
 wine_fn_config_makefile dlls/webservices enable_webservices
 wine_fn_config_makefile dlls/webservices/tests enable_tests
@@ -22859,6 +22865,7 @@ wine_fn_config_makefile dlls/wpcap enable_wpcap
 wine_fn_config_makefile dlls/wpcap/tests enable_tests
 wine_fn_config_makefile dlls/wpnapps enable_wpnapps
 wine_fn_config_makefile dlls/wpnapps/tests enable_tests
+wine_fn_config_makefile dlls/wpprecorder.sys enable_wpprecorder_sys
 wine_fn_config_makefile dlls/ws2_32 enable_ws2_32
 wine_fn_config_makefile dlls/ws2_32/tests enable_tests
 wine_fn_config_makefile dlls/wsdapi enable_wsdapi
@@ -22975,6 +22982,7 @@ wine_fn_config_makefile programs/certutil enable_certutil
 wine_fn_config_makefile programs/chcp.com enable_chcp_com
 wine_fn_config_makefile programs/clock enable_clock
 wine_fn_config_makefile programs/cmd enable_cmd
+wine_fn_config_makefile programs/csrss enable_csrss
 wine_fn_config_makefile programs/cmd/tests enable_tests
 wine_fn_config_makefile programs/conhost enable_conhost
 wine_fn_config_makefile programs/conhost/tests enable_tests
