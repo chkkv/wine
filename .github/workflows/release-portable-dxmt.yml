@@ -1,0 +1,123 @@
+name: Release portable Wine bundle (macOS x86_64)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (for example: v11.20-dxmt-1)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark the GitHub release as a pre-release"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-dxmt-${{ inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  OUT: ${{ github.workspace }}/out
+  BUNDLE: wine-11.20-dwproton-macos-x86_64
+  MACOSX_DEPLOYMENT_TARGET: "11.0"
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 240
+
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+        with:
+          ref: dev-dwproton-patch
+          fetch-depth: 0
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          uname -m
+          xcodebuild -version
+
+      - name: Cache prepared toolchains
+        uses: actions/cache@v4
+        with:
+          path: out/toolchain/llvm-darwin
+          key: llvm-15.0.7-darwin-x86_64-v1
+
+      - name: Build all components
+        run: |
+          chmod +x scripts/*.sh third_party/*/build.sh
+          scripts/build-all.sh --prefix "$OUT" --jobs "$(sysctl -n hw.ncpu)"
+
+      - name: Assemble portable bundle
+        run: |
+          export PATH="$(brew --prefix)/bin:$PATH"
+
+          BUNDLE_DIR="$OUT/$BUNDLE"
+          mv "$OUT/wine" "$BUNDLE_DIR"
+
+          cat > "$BUNDLE_DIR/wine" <<'LAUNCHER'
+          #!/bin/sh
+          set -e
+          here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+          export WINEPREFIX="${WINEPREFIX:-$here/prefix}"
+          export DYLD_FALLBACK_LIBRARY_PATH="$here/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+          export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-mscoree,mshtml=}"
+          exec "$here/bin/wine" "$@"
+          LAUNCHER
+          chmod +x "$BUNDLE_DIR/wine"
+
+          cat > "$BUNDLE_DIR/README.txt" <<'README'
+          Portable Wine 11.20 + dwproton patches + DXMT (macOS x86_64)
+          ============================================================
+
+          - Wine 11.20 (branch: dev-dwproton-patch)
+          - DXMT x86_64: D3D10/D3D11 -> Metal
+          - MoltenVK: native Vulkan backend
+          - FreeType bundled
+
+          Requirements
+          ------------
+          - Intel Mac, or Apple Silicon with Rosetta 2:
+              softwareupdate --install-rosetta --agree-to-license
+          - macOS 12 or newer is recommended (MoltenVK/DXMT need Metal).
+
+          Usage
+          -----
+              ./wine notepad
+              ./wine /path/to/app.exe
+
+          Default prefix is ./prefix. Override with WINEPREFIX if needed.
+
+          Notes
+          -----
+          - DXMT covers D3D10/D3D11; D3D9 uses Wine's wined3d/OpenGL.
+          - DXMT is built for x86_64 only; 32-bit D3D10/11 apps fall back
+            to wined3d.
+          - If Gatekeeper blocks the bundle after downloading:
+              xattr -dr com.apple.quarantine wine-11.20-dwproton-macos-x86_64
+          README
+
+          cd "$OUT"
+          rm -f "$BUNDLE.tar.xz" "$BUNDLE.tar.xz.sha256"
+          tar -cf - "$BUNDLE" | xz -T0 -6 > "$GITHUB_WORKSPACE/$BUNDLE.tar.xz"
+          shasum -a 256 "$GITHUB_WORKSPACE/$BUNDLE.tar.xz" > "$GITHUB_WORKSPACE/$BUNDLE.tar.xz.sha256"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: ${{ inputs.tag }}
+          target_commitish: dev-dwproton-patch
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          files: |
+            wine-11.20-dwproton-macos-x86_64.tar.xz
+            wine-11.20-dwproton-macos-x86_64.tar.xz.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
