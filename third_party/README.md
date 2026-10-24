@@ -50,3 +50,10 @@ MoltenVK is built from source at the pinned commit; its external dependency
 revisions are controlled by MoltenVK's `fetchDependencies`/`ExternalRevisions`.
 DXMT is built with LLVM 15 and Wine 8.16 tools prepared by
 `scripts/prepare-tools.sh`.
+
+## Application support shims
+
+`app-support/` contains small adapters written for this tree that work around
+Wine limitations for a specific application (for example a stub kernel driver
+for CPU-Z).  They are installed into a Wine prefix and are not part of the
+dependency build above; see `app-support/README.md`.
