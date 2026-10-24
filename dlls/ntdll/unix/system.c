@@ -3571,6 +3571,8 @@ NTSTATUS WINAPI NtQuerySystemInformation( SYSTEM_INFORMATION_CLASS class,
             "\\SystemRoot\\system32\\ntoskrnl.exe",
             "\\SystemRoot\\system32\\hal.dll",
         };
+        static const WCHAR ntos_nameW[] = {'n','t','o','s','k','r','n','l','.','e','x','e',0};
+        HMODULE ntos_mod = NULL;
 
         static const char driver_prefix[] = "\\SystemRoot\\system32\\drivers\\";
 
@@ -3579,6 +3581,28 @@ NTSTATUS WINAPI NtQuerySystemInformation( SYSTEM_INFORMATION_CLASS class,
         char *buffer = NULL;
         data_size_t buffer_size = 0, pos = 0;
         unsigned int module_count = 0;
+
+        /* Report the real ntoskrnl image base when it is loaded in this process. */
+        {
+            PEB *peb = NtCurrentTeb()->Peb;
+            LIST_ENTRY *entry = peb->LdrData->InLoadOrderModuleList.Flink;
+            while (entry != &peb->LdrData->InLoadOrderModuleList)
+            {
+                LDR_DATA_TABLE_ENTRY *mod = CONTAINING_RECORD( entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks );
+                const WCHAR *nm = mod->BaseDllName.Buffer;
+                unsigned int n = mod->BaseDllName.Length / sizeof(WCHAR);
+
+                if (n == 12)
+                {
+                    unsigned int k;
+                    int same = 1;
+
+                    for (k = 0; k < 12; k++) if (nm[k] != ntos_nameW[k]) { same = 0; break; }
+                    if (same) ntos_mod = mod->DllBase;
+                }
+                entry = entry->Flink;
+            }
+        }
 
         /* query with no buffer first, the reply tells us how much is needed */
         SERVER_START_REQ( list_kernel_modules )
@@ -3608,7 +3632,7 @@ NTSTATUS WINAPI NtQuerySystemInformation( SYSTEM_INFORMATION_CLASS class,
             for (i = 0; i < ARRAY_SIZE(fake_modules); i++)
             {
                 RTL_PROCESS_MODULE_INFORMATION *sm = &smi->Modules[i];
-                sm->ImageBaseAddress = (char *)0x10000000 + 0x200000 * i;
+                sm->ImageBaseAddress = i == 0 && ntos_mod ? (void *)ntos_mod : (char *)0x10000000 + 0x200000 * i;
                 sm->ImageSize = 0x200000;
                 sm->LoadOrderIndex = i;
                 sm->LoadCount = 1;
